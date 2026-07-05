@@ -13,6 +13,9 @@ type Config struct {
 	// MQTT
 	MQTTBroker string `env:"MQTT_BROKER,required"`
 	MQTTTopic  string `env:"MQTT_TOPIC,required"`
+
+	// RaspberryPi
+	RaspberryPiIP string `env:"RASPBERRY_PI_IP,required"`
 }
 
 func LoadConfig() (*Config, error) {

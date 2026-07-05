@@ -57,7 +57,7 @@ func main() {
 	// --------------------
 	// Establish TCP Pipe
 	// --------------------
-	conn, err := net.Dial("tcp", "10.42.0.1:1883")
+	conn, err := net.Dial("tcp", cfg.RaspberryPiIP)
 	if err != nil {
 		log.Fatalf("failed to connect to MQTT broker: %v", err)
 	}
