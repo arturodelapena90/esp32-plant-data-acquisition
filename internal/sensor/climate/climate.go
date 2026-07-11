@@ -1,15 +1,16 @@
 package climate
 
 import (
+	"fmt"
 	"time"
 
-	"go.uber.org/zap"
-	"tinygo.org/x/drivers/dht"
+	"machine"
+
+	"github.com/arturodelapena90/esp32-plant-acquisition/internal/sensor/climate/dhtdriver"
 )
 
 type Sensor struct {
-	log    *zap.SugaredLogger
-	device dht.Device
+	device dhtdriver.Device
 }
 
 type Reading struct {
@@ -17,14 +18,13 @@ type Reading struct {
 	Humidity    *float32
 }
 
-func New(log *zap.SugaredLogger, pin uint8) (*Sensor, error) {
-	device, err := initDHT22(log, pin)
+func New(pin machine.Pin) (*Sensor, error) {
+	device, err := initDHT22(pin)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Sensor{
-		log:    log,
 		device: device,
 	}, nil
 }
@@ -36,7 +36,7 @@ func (s *Sensor) Start(interval time.Duration, readingChan chan<- Reading) {
 	for range ticker.C {
 		reading, err := s.Read()
 		if err != nil {
-			s.log.Errorf("climate sensor error: %v", err)
+			fmt.Printf("climate sensor error: %v\n", err)
 		}
 
 		readingChan <- reading
@@ -44,7 +44,7 @@ func (s *Sensor) Start(interval time.Duration, readingChan chan<- Reading) {
 }
 
 func (s *Sensor) Read() (Reading, error) {
-	temp, humidity, err := readDHT22(s.log, s.device)
+	temp, humidity, err := readDHT22(s.device)
 
 	return Reading{
 		Temperature: temp,

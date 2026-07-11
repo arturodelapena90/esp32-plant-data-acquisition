@@ -3,27 +3,24 @@
 package soil
 
 import (
+	"fmt"
 	"machine"
-
-	"go.uber.org/zap"
 )
 
-func initSoilADC(log *zap.SugaredLogger, pin uint8) (machine.ADC, error) {
-	adcPin := machine.Pin(pin)
-
-	adc := machine.ADC{Pin: adcPin}
+func initSoilADC(pin machine.Pin) (machine.ADC, error) {
+	adc := machine.ADC{Pin: pin}
 	adc.Configure(machine.ADCConfig{})
 
 	return adc, nil
 }
 
-func readSoilADC(log *zap.SugaredLogger, adc machine.ADC) (*float32, error) {
+func readSoilADC(adc machine.ADC) (*float32, error) {
 	raw := uint32(adc.Get())
 
 	percentage := float32(raw) / 4095 * 100
 
-	log.Infof(
-		"soil ADC reading: raw=%d moisture=%.2f%%",
+	fmt.Printf(
+		"soil ADC reading: raw=%d moisture=%.2f%%\n",
 		raw,
 		percentage,
 	)

@@ -7,6 +7,8 @@ import (
 	"github.com/caarlos0/env/v10"
 )
 
+const mqttPort = "1883"
+
 type Config struct {
 
 	// Raspberry Pi
@@ -17,32 +19,32 @@ type Config struct {
 	WifiPassword string `env:"WIFI_PASSWORD,required"`
 
 	// MQTT
-	MQTTTopic  string `env:"MQTT_TOPIC,required"`
-	MQTTBroker string
+	MQTTTopic    string `env:"MQTT_TOPIC,required"`
+	MQTTClientID string `env:"MQTT_CLIENT_ID,required"`
+	MQTTBroker   string
 
 	// Hardware Settings
 	DHT22Pin     machine.Pin
 	SoilPin1     machine.Pin
 	SoilPin2     machine.Pin
+	I2CSDAPin    machine.Pin
+	I2CSCLPin    machine.Pin
 	ReadInterval time.Duration
-}
-
-func (c *Config) GetMQTTBroker() string {
-	return "mqtt://" + c.RaspberryPiIP + ":1883"
 }
 
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		DHT22Pin:     4,
 		SoilPin1:     7,
-		SoilPin2:     8,
+		SoilPin2:     6,
+		I2CSDAPin:    8,
+		I2CSCLPin:    9,
 		ReadInterval: 30 * time.Second,
 	}
 	if err := env.Parse(cfg); err != nil {
 		return nil, err
 	}
 
-	// add mqtt
-	cfg.MQTTBroker = "mqtt://" + cfg.RaspberryPiIP + ":1883"
+	cfg.MQTTBroker = cfg.RaspberryPiIP + ":" + mqttPort
 	return cfg, nil
 }

@@ -1,12 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"machine"
 	"net"
 
+	"tinygo.org/x/drivers/netdev"
+	nl "tinygo.org/x/drivers/netlink"
+	link "tinygo.org/x/espradio/netlink"
+
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/aggregator"
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/config"
-	"github.com/arturodelapena90/esp32-plant-acquisition/internal/logger"
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/mqtt"
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/sensor/climate"
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/sensor/light"
@@ -23,76 +27,71 @@ func main() {
 		panic(err)
 	}
 
-	// --------------------
-	// Logger Setup
-	// --------------------
-	if err := logger.Init(); err != nil {
-		panic(err)
-	}
-	defer logger.Sync()
-
-	log := logger.Log
-	log.Info("ESP32 Plant Data Acquisition started")
+	fmt.Println("ESP32 Plant Data Acquisition started")
 
 	// --------------------
 	// WiFi Setup
 	// --------------------
-	if err := machine.WIFI.Configure(machine.WIFIConfig{
-		SSID:     cfg.WifiSSID,
-		Password: cfg.WifiPassword,
+	wifi := link.Esplink{}
+	netdev.UseNetdev(&wifi)
+
+	if err := wifi.NetConnect(&nl.ConnectParams{
+		Ssid:       cfg.WifiSSID,
+		Passphrase: cfg.WifiPassword,
 	}); err != nil {
-		log.Fatalf("failed to configure WiFi: %v", err)
+		panic(fmt.Errorf("failed to connect to WiFi: %w", err))
 	}
+	fmt.Printf("WiFi connected: %s\n", cfg.WifiSSID)
 
 	// --------------------
 	// Establish TCP Pipe
 	// --------------------
-	conn, err := net.Dial("tcp", cfg.RaspberryPiIP)
+	conn, err := net.Dial("tcp", cfg.MQTTBroker)
 	if err != nil {
-		log.Fatalf("failed to connect to MQTT broker: %v", err)
+		panic(fmt.Errorf("failed to connect to MQTT broker: %w", err))
 	}
 	defer conn.Close()
 
 	// --------------------
 	// MQTT Setup
 	// --------------------
-	mqttClient, err := mqtt.SetupMQTT(conn, cfg.MQTTBroker)
+	mqttClient, err := mqtt.SetupMQTT(conn, cfg.MQTTClientID)
 	if err != nil {
-		log.Fatalf("MQTT Init failed: %v", err)
+		panic(fmt.Errorf("MQTT init failed: %w", err))
 	}
 
-	log.Infof("MQTT broker connected: %s", cfg.MQTTBroker)
+	fmt.Printf("MQTT broker connected: %s\n", cfg.MQTTBroker)
 
 	// --------------------
 	// I2C setup
 	// --------------------
 	bus := machine.I2C1
 	bus.Configure(machine.I2CConfig{
-		SDA: machine.GP8,
-		SCL: machine.GP9,
+		SDA: cfg.I2CSDAPin,
+		SCL: cfg.I2CSCLPin,
 	})
 
 	// --------------------
 	// Sensors
 	// --------------------
-	lightSensor, err := light.New(log, bus, 0x23)
+	lightSensor, err := light.New(bus, 0x23)
 	if err != nil {
-		log.Fatalf("light init failed: %v", err)
+		panic(fmt.Errorf("light init failed: %w", err))
 	}
 
-	climateSensor, err := climate.New(log, cfg.DHT22Pin)
+	climateSensor, err := climate.New(cfg.DHT22Pin)
 	if err != nil {
-		log.Fatalf("climate init failed: %v", err)
+		panic(fmt.Errorf("climate init failed: %w", err))
 	}
 
-	soil1, err := soil.New(log, cfg.SoilPin1)
+	soil1, err := soil.New(cfg.SoilPin1)
 	if err != nil {
-		log.Fatalf("soil1 init failed: %v", err)
+		panic(fmt.Errorf("soil1 init failed: %w", err))
 	}
 
-	soil2, err := soil.New(log, cfg.SoilPin2)
+	soil2, err := soil.New(cfg.SoilPin2)
 	if err != nil {
-		log.Fatalf("soil2 init failed: %v", err)
+		panic(fmt.Errorf("soil2 init failed: %w", err))
 	}
 
 	// --------------------
@@ -115,10 +114,10 @@ func main() {
 	// --------------------
 	// Pipeline
 	// --------------------
-	go aggregator.Start(log, lightChan, climateChan, soilChan1, soilChan2, mqttChan)
-	go mqttClient.Publish(log, cfg.MQTTTopic, mqttChan)
+	go aggregator.Start(lightChan, climateChan, soilChan1, soilChan2, mqttChan)
+	go mqttClient.Publish(cfg.MQTTTopic, mqttChan)
 
-	log.Info("system running")
+	fmt.Println("system running")
 
 	select {}
 }

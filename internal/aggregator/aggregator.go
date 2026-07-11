@@ -1,9 +1,8 @@
 package aggregator
 
 import (
+	"fmt"
 	"time"
-
-	"go.uber.org/zap"
 
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/mqtt"
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/sensor/climate"
@@ -12,7 +11,7 @@ import (
 )
 
 // begin the aggregation goroutine
-func Start(log *zap.SugaredLogger, lightChan <-chan light.Reading, climateChan <-chan climate.Reading, soilChan1 <-chan soil.Reading, soilChan2 <-chan soil.Reading, mqttChan chan<- mqtt.Data) {
+func Start(lightChan <-chan light.Reading, climateChan <-chan climate.Reading, soilChan1 <-chan soil.Reading, soilChan2 <-chan soil.Reading, mqttChan chan<- mqtt.Data) {
 	for {
 		// wait for readings from all sensors
 		lightReading := <-lightChan
@@ -29,7 +28,7 @@ func Start(log *zap.SugaredLogger, lightChan <-chan light.Reading, climateChan <
 			Moisture2:   soilReading2.Moisture,
 		}
 
-		log.Infof("aggregator: ts=%d light=%v temp=%v humidity=%v moisture1=%v moisture2=%v", payload.Timestamp, payload.Light, payload.Temperature, payload.Humidity, payload.Moisture1, payload.Moisture2)
+		fmt.Printf("aggregator: ts=%d light=%v temp=%v humidity=%v moisture1=%v moisture2=%v\n", payload.Timestamp, payload.Light, payload.Temperature, payload.Humidity, payload.Moisture1, payload.Moisture2)
 		mqttChan <- payload
 	}
 }

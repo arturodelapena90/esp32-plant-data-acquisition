@@ -1,17 +1,15 @@
 package light
 
 import (
+	"fmt"
 	"time"
 
 	"machine"
-
-	"go.uber.org/zap"
 )
 
 type Sensor struct {
-	log  *zap.SugaredLogger
-	bus  machine.I2C
-	addr uint8
+	bus  *machine.I2C
+	addr uint16
 }
 
 type Reading struct {
@@ -19,13 +17,12 @@ type Reading struct {
 }
 
 // New initializes the BH1750 sensor
-func New(log *zap.SugaredLogger, bus machine.I2C, addr uint8) (*Sensor, error) {
+func New(bus *machine.I2C, addr uint16) (*Sensor, error) {
 	if err := initBH1750(bus, addr); err != nil {
 		return nil, err
 	}
 
 	return &Sensor{
-		log:  log,
 		bus:  bus,
 		addr: addr,
 	}, nil
@@ -33,19 +30,13 @@ func New(log *zap.SugaredLogger, bus machine.I2C, addr uint8) (*Sensor, error) {
 
 // Start continuously reads light data and sends it to channel
 func (s *Sensor) Start(interval time.Duration, out chan<- Reading) {
-	// immediate first reading
-	if r, err := s.Read(); err == nil {
-		out <- r
-	}
-
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for range ticker.C {
 		r, err := s.Read()
 		if err != nil {
-			s.log.Errorf("light sensor error: %v", err)
-			continue
+			fmt.Printf("light sensor error: %v\n", err)
 		}
 		out <- r
 	}

@@ -3,34 +3,34 @@
 package climate
 
 import (
+	"fmt"
 	"machine"
 
-	"go.uber.org/zap"
-	"tinygo.org/x/drivers/dht"
+	"github.com/arturodelapena90/esp32-plant-acquisition/internal/sensor/climate/dhtdriver"
 )
 
-func initDHT22(log *zap.SugaredLogger, pin uint8) (dht.Device, error) {
-	device := dht.New(machine.Pin(pin), dht.DHT22)
+func initDHT22(pin machine.Pin) (dhtdriver.Device, error) {
+	device := dhtdriver.New(pin, dhtdriver.DHT22)
 	return device, nil
 }
 
-func readDHT22(log *zap.SugaredLogger, device dht.Device) (*float32, *float32, error) {
+func readDHT22(device dhtdriver.Device) (*float32, *float32, error) {
 	if err := device.ReadMeasurements(); err != nil {
-		log.Errorf("DHT22 read error: %v", err)
+		fmt.Printf("DHT22 read error: %v\n", err)
 		return nil, nil, err
 	}
 
 	temp, humidity, err := device.Measurements()
 	if err != nil {
-		log.Errorf("DHT22 measurements error: %v", err)
+		fmt.Printf("DHT22 measurements error: %v\n", err)
 		return nil, nil, err
 	}
 
 	tempFloat := float32(temp) / 10.0
 	humiFloat := float32(humidity) / 10.0
 
-	log.Infof(
-		"climate reading: %.1f°C, %.1f%% humidity",
+	fmt.Printf(
+		"climate reading: %.1f°C, %.1f%% humidity\n",
 		tempFloat,
 		humiFloat,
 	)

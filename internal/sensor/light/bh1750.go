@@ -13,7 +13,7 @@ const (
 )
 
 // initBH1750 configures the sensor
-func initBH1750(bus machine.I2C, addr uint8) error {
+func initBH1750(bus *machine.I2C, addr uint16) error {
 	// power on
 	if err := bus.Tx(addr, []byte{BH1750PowerOn}, nil); err != nil {
 		return err
@@ -33,7 +33,7 @@ func initBH1750(bus machine.I2C, addr uint8) error {
 }
 
 // readBH1750 reads lux from sensor
-func readBH1750(bus machine.I2C, addr uint8) (*float32, error) {
+func readBH1750(bus *machine.I2C, addr uint16) (*float32, error) {
 	data := make([]byte, 2)
 
 	if err := bus.Tx(addr, nil, data); err != nil {

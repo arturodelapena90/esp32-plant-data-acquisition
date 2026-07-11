@@ -3,11 +3,11 @@ package mqtt
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
 	mqtt "github.com/soypat/natiu-mqtt"
-	"go.uber.org/zap"
 )
 
 // Data structure matches your existing payload
@@ -46,17 +46,17 @@ func SetupMQTT(conn io.ReadWriteCloser, clientID string) (*Client, error) {
 }
 
 // Publish serializes and sends your data
-func (c *Client) Publish(log *zap.SugaredLogger, topic string, mqttChan <-chan Data) error {
+func (c *Client) Publish(topic string, mqttChan <-chan Data) error {
 	for data := range mqttChan {
 		payload, err := json.Marshal(data)
 		if err != nil {
-			log.Errorf("failed to marshal data: %v", err)
+			fmt.Printf("failed to marshal data: %v\n", err)
 			continue
 		}
 		pubFlags, _ := mqtt.NewPublishFlags(mqtt.QoS0, false, false)
 		pubVar := mqtt.VariablesPublish{TopicName: []byte(topic)}
 		if err := c.client.PublishPayload(pubFlags, pubVar, payload); err != nil {
-			log.Errorf("failed to publish data: %v", err)
+			fmt.Printf("failed to publish data: %v\n", err)
 		}
 	}
 	return nil
