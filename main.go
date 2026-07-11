@@ -3,7 +3,6 @@ package main
 import (
 	"machine"
 	"net"
-	"time"
 
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/aggregator"
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/config"
@@ -12,14 +11,6 @@ import (
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/sensor/climate"
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/sensor/light"
 	"github.com/arturodelapena90/esp32-plant-acquisition/internal/sensor/soil"
-)
-
-// configuration
-const (
-	DHT22Pin     = 4
-	SoilPin1     = 7
-	SoilPin2     = 8
-	ReadInterval = 30 * time.Second
 )
 
 func main() {
@@ -90,17 +81,17 @@ func main() {
 		log.Fatalf("light init failed: %v", err)
 	}
 
-	climateSensor, err := climate.New(log, DHT22Pin)
+	climateSensor, err := climate.New(log, cfg.DHT22Pin)
 	if err != nil {
 		log.Fatalf("climate init failed: %v", err)
 	}
 
-	soil1, err := soil.New(log, SoilPin1)
+	soil1, err := soil.New(log, cfg.SoilPin1)
 	if err != nil {
 		log.Fatalf("soil1 init failed: %v", err)
 	}
 
-	soil2, err := soil.New(log, SoilPin2)
+	soil2, err := soil.New(log, cfg.SoilPin2)
 	if err != nil {
 		log.Fatalf("soil2 init failed: %v", err)
 	}
@@ -117,10 +108,10 @@ func main() {
 	// --------------------
 	// Start sensors
 	// --------------------
-	go lightSensor.Start(ReadInterval, lightChan)
-	go climateSensor.Start(ReadInterval, climateChan)
-	go soil1.Start(ReadInterval, soilChan1)
-	go soil2.Start(ReadInterval, soilChan2)
+	go lightSensor.Start(cfg.ReadInterval, lightChan)
+	go climateSensor.Start(cfg.ReadInterval, climateChan)
+	go soil1.Start(cfg.ReadInterval, soilChan1)
+	go soil2.Start(cfg.ReadInterval, soilChan2)
 
 	// --------------------
 	// Pipeline
