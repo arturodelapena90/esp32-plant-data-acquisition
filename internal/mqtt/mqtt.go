@@ -20,6 +20,23 @@ type Data struct {
 	Moisture2   *float32 `json:"moisture2_percent"`
 }
 
+// String implements fmt.Stringer so %v/%s on a Data print readable values
+// instead of pointer addresses for the nil-able *float32 fields.
+func (d Data) String() string {
+	return fmt.Sprintf(
+		"ts=%d light=%s temp=%s humidity=%s moisture1=%s moisture2=%s",
+		d.Timestamp, formatReading(d.Light), formatReading(d.Temperature),
+		formatReading(d.Humidity), formatReading(d.Moisture1), formatReading(d.Moisture2),
+	)
+}
+
+func formatReading(v *float32) string {
+	if v == nil {
+		return "nil"
+	}
+	return fmt.Sprintf("%.2f", *v)
+}
+
 // Client wraps the natiu-mqtt client
 type Client struct {
 	client *mqtt.Client

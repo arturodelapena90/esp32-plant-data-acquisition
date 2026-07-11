@@ -28,7 +28,7 @@ func Start(lightChan <-chan light.Reading, climateChan <-chan climate.Reading, s
 			Moisture2:   soilReading2.Moisture,
 		}
 
-		fmt.Printf("aggregator: ts=%d light=%v temp=%v humidity=%v moisture1=%v moisture2=%v\n", payload.Timestamp, payload.Light, payload.Temperature, payload.Humidity, payload.Moisture1, payload.Moisture2)
+		fmt.Printf("aggregator: %s\n", payload)
 		mqttChan <- payload
 	}
 }

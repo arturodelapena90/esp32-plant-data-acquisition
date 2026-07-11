@@ -27,4 +27,4 @@ flash:
 	tinygo flash -target=$(TARGET) -port=$(SERIAL_PORT) -ldflags="$(LDFLAGS)" main.go
 
 monitor:
-	tinygo monitor -port=$(SERIAL_PORT) -baud=921600
+	tinygo monitor -port=$(SERIAL_PORT) -baudrate=115200
