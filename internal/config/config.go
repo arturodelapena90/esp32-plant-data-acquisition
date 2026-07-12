@@ -11,19 +11,7 @@ const (
 	defaultMQTTClientID = "esp32-habanero-01"
 )
 
-// buildWifiSSID, buildWifiPassword, buildRaspberryPiIP, buildMQTTTopic and
-// buildMQTTClientID are injected at build time via `-ldflags -X`, e.g.:
-//
-//	tinygo flash -target=esp32s3-generic -ldflags="-X github.com/arturodelapena90/esp32-plant-acquisition/internal/config.buildWifiSSID=..."
-//
-// `make build`/`make flash` do this for you by reading .env (see Makefile).
-// A flashed ESP32-S3 has no OS environment for os.Getenv to read from, so
-// .env can't be loaded at runtime the way it could on a hosted Go program.
-//
-// These must stay zero-value here: TinyGo's `-X` silently fails to override
-// a var that already has a non-empty initializer (verified against TinyGo
-// 0.41.1 — the linker reports no error, it just keeps the compiled-in
-// default). Any default value goes in LoadConfig() instead.
+// envs are injected at build time via `-ldflags -X` in the makefile
 var (
 	buildWifiSSID      string
 	buildWifiPassword  string

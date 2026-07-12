@@ -43,6 +43,8 @@ Each sensor type lives in its own package under `internal/sensor/` and follows t
 
 `internal/sensor/climate/dhtdriver/` is a vendored, patched copy of `tinygo.org/x/drivers/dht` — that upstream package (as of v0.35.0 and the current `dev` branch) doesn't compile for esp32s3 (`machine.CPUFrequency()` doesn't exist there) and its bit-timing `counter` type would overflow at esp32s3's ~240MHz clock even if it did. See `dhtdriver/doc.go` for the specifics. Don't route DHT22 changes through the upstream `tinygo.org/x/drivers/dht` import — this package is a deliberate fork, not a mistake.
 
+**`machine.ADC.Configure()` alone does not power up the ESP32-S3's SAR-ADC hardware.** `internal/sensor/soil/sto160.go` calls a package-level `sync.Once`-guarded `machine.InitADC()` before configuring any `machine.ADC{}` instance. Skipping this isn't a soft failure — `Configure()` only sets the pin to analog mode, so without `InitADC()`'s clock/power-up/calibration sequence, `machine.ADC.Get()`'s internal busy-wait for a "conversion done" hardware flag spins forever on a peripheral that was never turned on, permanently freezing the whole program (TinyGo's cooperative scheduler on this target has no preemption, so one stuck goroutine halts everything, not just the caller). `InitADC()` only needs to run once process-wide, not once per `ADC` instance — hence the `sync.Once`, since there are two soil sensors each calling `soil.New()`. Also note `Get()` on this TinyGo version returns a 16-bit-scaled value (`0..65520`), not the raw 12-bit reading — `readSoilADC()` divides by `65520`, not `4095`.
+
 Data flow, wired up in `main.go`:
 
 1. `config.LoadConfig()` reads env vars.
