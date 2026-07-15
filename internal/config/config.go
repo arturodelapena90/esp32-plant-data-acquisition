@@ -3,21 +3,19 @@ package config
 import (
 	"fmt"
 	"machine"
+	"strconv"
 	"time"
-)
-
-const (
-	mqttPort            = "1883"
-	defaultMQTTClientID = "esp32-habanero-01"
 )
 
 // envs are injected at build time via `-ldflags -X` in the makefile
 var (
-	buildWifiSSID      string
-	buildWifiPassword  string
-	buildRaspberryPiIP string
-	buildMQTTTopic     string
-	buildMQTTClientID  string
+	buildWifiSSID         string
+	buildWifiPassword     string
+	buildRaspberryPiIP    string
+	buildMQTTTopic        string
+	buildMQTTClientID     string
+	buildMQTTPort         string
+	buildReadIntervalSecs string
 )
 
 type Config struct {
@@ -45,13 +43,14 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	if buildWifiSSID == "" || buildWifiPassword == "" || buildRaspberryPiIP == "" || buildMQTTTopic == "" {
+	if buildWifiSSID == "" || buildWifiPassword == "" || buildRaspberryPiIP == "" || buildMQTTTopic == "" ||
+		buildMQTTClientID == "" || buildMQTTPort == "" || buildReadIntervalSecs == "" {
 		return nil, fmt.Errorf("missing required build-time config (wifi/broker credentials) — build with `make build`/`make flash`, not a bare tinygo build")
 	}
 
-	clientID := buildMQTTClientID
-	if clientID == "" {
-		clientID = defaultMQTTClientID
+	readIntervalSecs, err := strconv.Atoi(buildReadIntervalSecs)
+	if err != nil || readIntervalSecs <= 0 {
+		return nil, fmt.Errorf("invalid READ_INTERVAL in .env: must be a positive integer number of seconds, got %q", buildReadIntervalSecs)
 	}
 
 	cfg := &Config{
@@ -59,15 +58,15 @@ func LoadConfig() (*Config, error) {
 		WifiSSID:      buildWifiSSID,
 		WifiPassword:  buildWifiPassword,
 		MQTTTopic:     buildMQTTTopic,
-		MQTTClientID:  clientID,
+		MQTTClientID:  buildMQTTClientID,
 		DHT22Pin:      4,
 		SoilPin1:      7,
 		SoilPin2:      6,
 		I2CSDAPin:     8,
 		I2CSCLPin:     9,
 		StatusLEDPin:  48,
-		ReadInterval:  10 * time.Second,
+		ReadInterval:  time.Duration(readIntervalSecs) * time.Second,
 	}
-	cfg.MQTTBroker = cfg.RaspberryPiIP + ":" + mqttPort
+	cfg.MQTTBroker = cfg.RaspberryPiIP + ":" + buildMQTTPort
 	return cfg, nil
 }

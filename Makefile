@@ -16,7 +16,9 @@ LDFLAGS = $(shell set -a && . ./.env && set +a && \
 	     "-X $(CONFIG_PKG).buildWifiPassword=$$WIFI_PASSWORD" \
 	     "-X $(CONFIG_PKG).buildRaspberryPiIP=$$RASPBERRY_PI_IP" \
 	     "-X $(CONFIG_PKG).buildMQTTTopic=$$MQTT_TOPIC" \
-	     "-X $(CONFIG_PKG).buildMQTTClientID=$$MQTT_CLIENT_ID")
+	     "-X $(CONFIG_PKG).buildMQTTClientID=$$MQTT_CLIENT_ID" \
+	     "-X $(CONFIG_PKG).buildMQTTPort=$$MQTT_PORT" \
+	     "-X $(CONFIG_PKG).buildReadIntervalSecs=$$READ_INTERVAL")
 
 .PHONY: build flash monitor
 
