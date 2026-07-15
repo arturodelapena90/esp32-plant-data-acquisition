@@ -31,6 +31,13 @@ const (
 	pulseDuration = 5 * time.Second
 )
 
+var Brightness byte = 5
+
+// scale applies Brightness to a single 0-255 channel value.
+func scale(v byte) byte {
+	return byte(uint16(v) * uint16(Brightness) / 255)
+}
+
 // Setup configures pin as an output and turns the LED off. Call once at
 // startup before Ready/Fail/Pulse.
 func Setup(pin machine.Pin) {
@@ -40,12 +47,12 @@ func Setup(pin machine.Pin) {
 
 // Ready shows steady green: everything is working normally.
 func Ready(pin machine.Pin) {
-	SetColor(pin, 0, 20, 0)
+	SetColor(pin, 0, scale(255), 0)
 }
 
 // Fail shows steady red: a failure occurred.
 func Fail(pin machine.Pin) {
-	SetColor(pin, 20, 0, 0)
+	SetColor(pin, scale(255), 0, 0)
 }
 
 // Pulse blinks purple/off for a few seconds to indicate a new message was
@@ -53,7 +60,7 @@ func Fail(pin machine.Pin) {
 // blink.
 func Pulse(pin machine.Pin) {
 	for elapsed := time.Duration(0); elapsed < pulseDuration; elapsed += pulseInterval {
-		SetColor(pin, 15, 0, 20)
+		SetColor(pin, scale(190), 0, scale(255))
 		time.Sleep(pulseInterval)
 		SetColor(pin, 0, 0, 0)
 		time.Sleep(pulseInterval)
