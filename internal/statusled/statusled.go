@@ -26,6 +26,41 @@ import (
 	"unsafe"
 )
 
+const (
+	pulseInterval = 250 * time.Millisecond
+	pulseDuration = 5 * time.Second
+)
+
+// Setup configures pin as an output and turns the LED off. Call once at
+// startup before Ready/Fail/Pulse.
+func Setup(pin machine.Pin) {
+	pin.Configure(machine.PinConfig{Mode: machine.PinOutput})
+	SetColor(pin, 0, 0, 0)
+}
+
+// Ready shows steady green: everything is working normally.
+func Ready(pin machine.Pin) {
+	SetColor(pin, 0, 20, 0)
+}
+
+// Fail shows steady red: a failure occurred.
+func Fail(pin machine.Pin) {
+	SetColor(pin, 20, 0, 0)
+}
+
+// Pulse blinks purple/off for a few seconds to indicate a new message was
+// produced, then returns to steady green. Blocks for the duration of the
+// blink.
+func Pulse(pin machine.Pin) {
+	for elapsed := time.Duration(0); elapsed < pulseDuration; elapsed += pulseInterval {
+		SetColor(pin, 15, 0, 20)
+		time.Sleep(pulseInterval)
+		SetColor(pin, 0, 0, 0)
+		time.Sleep(pulseInterval)
+	}
+	Ready(pin)
+}
+
 // SetColor drives a single WS2812/NeoPixel LED on pin with the given RGB
 // values (0-255 each). Blocks for the duration of the transfer plus a reset
 // latch. Not safe to call concurrently with other WS2812 writes on the same

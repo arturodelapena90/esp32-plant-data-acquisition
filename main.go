@@ -33,13 +33,10 @@ func main() {
 	// --------------------
 	// Status LED Setup
 	// --------------------
-	cfg.StatusLEDPin.Configure(machine.PinConfig{Mode: machine.PinOutput})
-	statusled.SetColor(cfg.StatusLEDPin, 0, 0, 0)
+	statusled.Setup(cfg.StatusLEDPin)
 	fail := func(err error) {
 		fmt.Println("fatal:", err)
-		for i := 0; i < 3; i++ {
-			statusled.SetColor(cfg.StatusLEDPin, 20, 0, 0)
-		}
+		statusled.Fail(cfg.StatusLEDPin)
 		time.Sleep(20 * time.Second)
 		esp.RTC_CNTL.SetOPTIONS0_SW_SYS_RST(1)
 		for {
@@ -129,7 +126,7 @@ func main() {
 	go soil1.Start(cfg.ReadInterval, soilChan1)
 	go soil2.Start(cfg.ReadInterval, soilChan2)
 
-	statusled.SetColor(cfg.StatusLEDPin, 0, 20, 0)
+	statusled.Ready(cfg.StatusLEDPin)
 
 	// --------------------
 	// Pipeline
@@ -139,14 +136,11 @@ func main() {
 
 	go func() {
 		for data := range aggChan {
-			statusled.SetColor(cfg.StatusLEDPin, 15, 0, 20)
-			time.Sleep(time.Second)
-			statusled.SetColor(cfg.StatusLEDPin, 0, 20, 0)
-
 			select {
 			case mqttChan <- data:
 			default:
 			}
+			statusled.Pulse(cfg.StatusLEDPin)
 		}
 	}()
 
