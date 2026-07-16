@@ -55,7 +55,7 @@ func main() {
 	// --------------------
 	// Time Sync
 	// --------------------
-	if err := timesync.Sync("pool.ntp.org:123"); err != nil {
+	if err := timesync.Sync("google.com:80"); err != nil {
 		fmt.Printf("NTP sync failed, timestamps will be seconds-since-boot: %v\n", err)
 	} else {
 		fmt.Printf("Time synced: %s\n", time.Now().UTC())
@@ -120,7 +120,6 @@ func main() {
 	soilChan1 := make(chan soil.Reading)
 	soilChan2 := make(chan soil.Reading)
 	mqttChan := make(chan mqtt.Data)
-	aggChan := make(chan mqtt.Data)
 
 	// --------------------
 	// Start sensors
@@ -133,7 +132,7 @@ func main() {
 	// --------------------
 	// Pipeline
 	// --------------------
-	go aggregator.Start(lightChan, climateChan, soilChan1, soilChan2, aggChan)
+	go aggregator.Start(lightChan, climateChan, soilChan1, soilChan2, mqttChan)
 	go mqttClient.Publish(cfg.MQTTTopic, mqttChan)
 
 	fmt.Println("ESP32 Plant Data Acquisition started")

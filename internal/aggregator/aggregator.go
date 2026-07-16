@@ -20,7 +20,7 @@ func Start(lightChan <-chan light.Reading, climateChan <-chan climate.Reading, s
 		soilReading2 := <-soilChan2
 
 		payload := mqtt.Data{
-			Timestamp:   time.Now().Unix(),
+			Timestamp:   time.Now().UTC(),
 			Light:       lightReading.Lux,
 			Temperature: climateReading.Temperature,
 			Humidity:    climateReading.Humidity,

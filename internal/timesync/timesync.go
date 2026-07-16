@@ -1,47 +1,55 @@
-// Package timesync sets the device clock from an NTP server. Baremetal
-// TinyGo has no RTC, so time.Now() starts counting from zero at boot (see
-// runtime/baremetal.go) -- without this, every Reading's Unix timestamp is
-// actually just seconds-since-boot, not a real point in time.
 package timesync
 
 import (
+	"bufio"
 	"fmt"
-	"io"
 	"net"
 	"runtime"
+	"strings"
 	"time"
 )
 
-// packetSize is the fixed size of an NTP client/server packet (RFC 5905).
-const packetSize = 48
+const httpDateLayout = "Mon, 02 Jan 2006 15:04:05 GMT"
+const dialAndReadTimeout = 5 * time.Second
 
-// toUnixEpochOffset converts NTP's epoch (1900-01-01) to Unix's (1970-01-01): 70 years, accounting for leap days.
-const toUnixEpochOffset = 2208988800
-
-func Sync(ntpHost string) error {
-	conn, err := net.Dial("udp", ntpHost)
+func Sync(addr string) error {
+	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
-	request := [packetSize]byte{0xe3}
-	if _, err := conn.Write(request[:]); err != nil {
+	conn.SetDeadline(time.Now().Add(dialAndReadTimeout))
+
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return err
+	}
+	request := fmt.Sprintf("HEAD / HTTP/1.0\r\nHost: %s\r\n\r\n", host)
+	if _, err := conn.Write([]byte(request)); err != nil {
 		return err
 	}
 
-	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	response := make([]byte, packetSize)
-	n, err := conn.Read(response)
-	if err != nil && err != io.EOF {
-		return err
-	}
-	if n != packetSize {
-		return fmt.Errorf("unexpected NTP packet size: %d", n)
-	}
+	reader := bufio.NewReader(conn)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return fmt.Errorf("reading response: %w", err)
+		}
+		line = strings.TrimRight(line, "\r\n")
+		if line == "" {
+			return fmt.Errorf("no Date header in response")
+		}
+		rest, ok := strings.CutPrefix(line, "Date: ")
+		if !ok {
+			continue
+		}
 
-	secs := uint32(response[40])<<24 | uint32(response[41])<<16 | uint32(response[42])<<8 | uint32(response[43])
-	ntpTime := time.Unix(int64(secs)-toUnixEpochOffset, 0)
-	runtime.AdjustTimeOffset(-1 * int64(time.Since(ntpTime)))
-	return nil
+		serverTime, err := time.Parse(httpDateLayout, rest)
+		if err != nil {
+			return fmt.Errorf("parsing Date header %q: %w", rest, err)
+		}
+		runtime.AdjustTimeOffset(-1 * int64(time.Since(serverTime)))
+		return nil
+	}
 }

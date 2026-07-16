@@ -12,20 +12,20 @@ import (
 
 // Data structure matches your existing payload
 type Data struct {
-	Timestamp   int64    `json:"timestamp"`
-	Light       *float32 `json:"light_lux"`
-	Temperature *float32 `json:"temperature_c"`
-	Humidity    *float32 `json:"humidity_percent"`
-	Moisture1   *float32 `json:"moisture1_percent"`
-	Moisture2   *float32 `json:"moisture2_percent"`
+	Timestamp   time.Time `json:"timestamp"`
+	Light       *float32  `json:"light_lux"`
+	Temperature *float32  `json:"temperature_c"`
+	Humidity    *float32  `json:"humidity_percent"`
+	Moisture1   *float32  `json:"moisture1_percent"`
+	Moisture2   *float32  `json:"moisture2_percent"`
 }
 
 // String implements fmt.Stringer so %v/%s on a Data print readable values
 // instead of pointer addresses for the nil-able *float32 fields.
 func (d Data) String() string {
 	return fmt.Sprintf(
-		"ts=%d light=%s temp=%s humidity=%s moisture1=%s moisture2=%s",
-		d.Timestamp, formatReading(d.Light), formatReading(d.Temperature),
+		"ts=%s light=%s temp=%s humidity=%s moisture1=%s moisture2=%s",
+		d.Timestamp.Format(time.RFC3339), formatReading(d.Light), formatReading(d.Temperature),
 		formatReading(d.Humidity), formatReading(d.Moisture1), formatReading(d.Moisture2),
 	)
 }
